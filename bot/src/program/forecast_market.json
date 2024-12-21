@@ -1,0 +1,1179 @@
+{
+  "address": "DQ31XNvikuu2gaQaxwSo2BpAkWiTWwTc6iEJcvjNLLBy",
+  "metadata": {
+    "name": "forecast_market",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "add_answer_keys",
+      "discriminator": [89, 115, 155, 223, 0, 19, 17, 59],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "answer_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [97, 110, 115, 119, 101, 114]
+              },
+              {
+                "kind": "account",
+                "path": "market_account.market_key",
+                "account": "MarketAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "anwser_keys",
+          "type": {
+            "vec": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "adjourn_market",
+      "discriminator": [122, 223, 248, 29, 26, 4, 248, 39],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "approve_market",
+      "discriminator": [195, 83, 73, 224, 150, 237, 150, 5],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "bet",
+      "discriminator": [94, 203, 166, 126, 20, 243, 169, 82],
+      "accounts": [
+        {
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "bet_mint",
+          "writable": true
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market_account"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206,
+                  235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140,
+                  245, 133, 126, 255, 0, 169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+                219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "answer_account",
+          "writable": true
+        },
+        {
+          "name": "bet_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [98, 101, 116, 116, 105, 110, 103]
+              },
+              {
+                "kind": "account",
+                "path": "voter"
+              },
+              {
+                "kind": "account",
+                "path": "market_account.market_key",
+                "account": "MarketAccount"
+              },
+              {
+                "kind": "arg",
+                "path": "answer_key"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "anwser_key",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_token",
+      "discriminator": [116, 206, 27, 191, 166, 19, 0, 73],
+      "accounts": [
+        {
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "bet_mint",
+          "writable": true
+        },
+        {
+          "name": "reward_mint",
+          "writable": true
+        },
+        {
+          "name": "user_bet_token_account",
+          "writable": true
+        },
+        {
+          "name": "vault_bet_token_account",
+          "writable": true
+        },
+        {
+          "name": "user_reward_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "voter"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206,
+                  235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140,
+                  245, 133, 126, 255, 0, 169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reward_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+                219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_reward_token_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "bet_account",
+          "writable": true
+        },
+        {
+          "name": "answer_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "draft_market",
+      "discriminator": [251, 196, 130, 72, 251, 64, 188, 39],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_mint",
+          "writable": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [109, 97, 114, 107, 101, 116]
+              },
+              {
+                "kind": "arg",
+                "path": "market_key"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_key",
+          "type": "u64"
+        },
+        {
+          "name": "creator",
+          "type": "pubkey"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "create_fee",
+          "type": "u64"
+        },
+        {
+          "name": "creator_fee_percentage",
+          "type": "u64"
+        },
+        {
+          "name": "cojam_fee_percentage",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "finish_market",
+      "discriminator": [200, 216, 58, 2, 224, 204, 151, 26],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reward_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "reward_apr",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "retrieve_tokens",
+      "discriminator": [208, 194, 68, 55, 183, 22, 93, 135],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true
+        },
+        {
+          "name": "remains_token_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associate_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_account",
+      "discriminator": [100, 58, 16, 200, 83, 84, 162, 203],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "service_fee_account",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "remain_account",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "success_market",
+      "discriminator": [252, 13, 1, 40, 160, 91, 131, 212],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true
+        },
+        {
+          "name": "market_account",
+          "writable": true
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true
+        },
+        {
+          "name": "creator_token_account",
+          "writable": true
+        },
+        {
+          "name": "service_token_account",
+          "writable": true
+        },
+        {
+          "name": "answer_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associate_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "answer_key",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_owner",
+      "discriminator": [164, 188, 124, 254, 132, 26, 198, 178],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_owner",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "update_reward_config",
+      "discriminator": [35, 111, 215, 56, 135, 228, 232, 50],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "reward_mint",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "reward_apr",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AnswerAccount",
+      "discriminator": [75, 175, 139, 96, 119, 135, 123, 71]
+    },
+    {
+      "name": "BettingAccount",
+      "discriminator": [128, 101, 147, 11, 71, 96, 22, 160]
+    },
+    {
+      "name": "ConfigAccount",
+      "discriminator": [189, 255, 97, 70, 186, 189, 24, 102]
+    },
+    {
+      "name": "MarketAccount",
+      "discriminator": [201, 78, 187, 225, 240, 198, 201, 251]
+    }
+  ],
+  "events": [
+    {
+      "name": "AnswerAdded",
+      "discriminator": [82, 95, 97, 36, 223, 127, 175, 26]
+    },
+    {
+      "name": "BetPlaced",
+      "discriminator": [88, 88, 145, 226, 126, 206, 32, 0]
+    },
+    {
+      "name": "MarketAdjourned",
+      "discriminator": [255, 9, 83, 139, 244, 130, 217, 61]
+    },
+    {
+      "name": "MarketApproved",
+      "discriminator": [213, 222, 68, 97, 16, 1, 31, 38]
+    },
+    {
+      "name": "MarketDrafted",
+      "discriminator": [165, 166, 240, 170, 76, 56, 133, 177]
+    },
+    {
+      "name": "MarketFinished",
+      "discriminator": [55, 252, 141, 64, 190, 178, 104, 34]
+    },
+    {
+      "name": "MarketSuccess",
+      "discriminator": [28, 146, 105, 87, 226, 249, 99, 105]
+    },
+    {
+      "name": "RewardClaimed",
+      "discriminator": [49, 28, 87, 84, 158, 48, 229, 175]
+    },
+    {
+      "name": "TokenClaimed",
+      "discriminator": [49, 144, 233, 63, 84, 154, 232, 26]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AlreadyInitialized",
+      "msg": "The configuration account is already initialized."
+    },
+    {
+      "code": 6001,
+      "name": "Unauthorized",
+      "msg": "You are not authorized to perform this action."
+    },
+    {
+      "code": 6002,
+      "name": "MathOperationError",
+      "msg": "Operation resulted in an error."
+    },
+    {
+      "code": 6003,
+      "name": "MarketNotFinished",
+      "msg": "Market/AdjournMarket: Market is not finished"
+    },
+    {
+      "code": 6004,
+      "name": "MarketDoesExist",
+      "msg": "Market/DraftMarket: Market key does exist"
+    },
+    {
+      "code": 6005,
+      "name": "MarketNotApproved",
+      "msg": "Market/Bet: Market is not approved"
+    },
+    {
+      "code": 6006,
+      "name": "MaxAnswersReached",
+      "msg": "The maximum number of answers has been reached."
+    },
+    {
+      "code": 6007,
+      "name": "AnswerAlreadyExists",
+      "msg": "The answer key already exists."
+    },
+    {
+      "code": 6008,
+      "name": "AnswerNotExists",
+      "msg": "The answer key does not exist."
+    },
+    {
+      "code": 6009,
+      "name": "MarketDoesNotContainAnswerKey",
+      "msg": "Market/SuccessMarket: Market does not contain answerKey"
+    },
+    {
+      "code": 6010,
+      "name": "CannotClaimToken",
+      "msg": "Market/Receive: Cannot receive token"
+    },
+    {
+      "code": 6011,
+      "name": "CannotRetrieveToken",
+      "msg": "Market/Retrieve: Cannot Retrieve not finished market"
+    },
+    {
+      "code": 6012,
+      "name": "CannotRetrieveBeforeDate",
+      "msg": "Market/Retrieve: Cannot Retrieve before 180 days"
+    },
+    {
+      "code": 6013,
+      "name": "AnswerKeyNotRight",
+      "msg": "Market/Receive: Answer key is not succeeded answer key"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidBetMint",
+      "msg": "Market/Bet: Invalid bet mint"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidTimeRange",
+      "msg": "Market/ClaimToken: Invalid time range"
+    },
+    {
+      "code": 6016,
+      "name": "Overflow",
+      "msg": "Operation Error: Overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "Answer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "answer_key",
+            "type": "u64"
+          },
+          {
+            "name": "answer_total_tokens",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AnswerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "answers",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Answer"
+                }
+              }
+            }
+          },
+          {
+            "name": "exist",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AnswerAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "new_answers",
+            "type": {
+              "vec": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "BetPlaced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "answer_key",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BettingAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "answer_key",
+            "type": "u64"
+          },
+          {
+            "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokens",
+            "type": "u64"
+          },
+          {
+            "name": "create_time",
+            "type": "u64"
+          },
+          {
+            "name": "exist",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "is_initialized",
+            "type": "bool"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_apr",
+            "type": "u64"
+          },
+          {
+            "name": "service_fee_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "remain_account",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "exist",
+            "type": "bool"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "bet_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          },
+          {
+            "name": "creator_fee",
+            "type": "u64"
+          },
+          {
+            "name": "creator_fee_percentage",
+            "type": "u64"
+          },
+          {
+            "name": "service_fee_percentage",
+            "type": "u64"
+          },
+          {
+            "name": "approve_time",
+            "type": "u64"
+          },
+          {
+            "name": "finish_time",
+            "type": "u64"
+          },
+          {
+            "name": "adjourn_time",
+            "type": "u64"
+          },
+          {
+            "name": "success_time",
+            "type": "u64"
+          },
+          {
+            "name": "market_total_tokens",
+            "type": "u64"
+          },
+          {
+            "name": "market_remain_tokens",
+            "type": "u64"
+          },
+          {
+            "name": "correct_answer_key",
+            "type": "u64"
+          },
+          {
+            "name": "market_reward_base_tokens",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketAdjourned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_key",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketApproved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_key",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketDrafted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "create_fee",
+            "type": "u64"
+          },
+          {
+            "name": "creator_fee_percentage",
+            "type": "u64"
+          },
+          {
+            "name": "service_fee_percentage",
+            "type": "u64"
+          },
+          {
+            "name": "approve_time",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketFinished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "end_time",
+            "type": "u64"
+          },
+          {
+            "name": "remain_tokens",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Draft"
+          },
+          {
+            "name": "Approve"
+          },
+          {
+            "name": "Finished"
+          },
+          {
+            "name": "Success"
+          },
+          {
+            "name": "Adjourn"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketSuccess",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "answer_key",
+            "type": "u64"
+          },
+          {
+            "name": "creator_fee",
+            "type": "u64"
+          },
+          {
+            "name": "service_fee",
+            "type": "u64"
+          },
+          {
+            "name": "market_remain_tokens",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "receiver",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "receiver",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_key",
+            "type": "u64"
+          },
+          {
+            "name": "betting_key",
+            "type": "u64"
+          },
+          {
+            "name": "received_tokens",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}
