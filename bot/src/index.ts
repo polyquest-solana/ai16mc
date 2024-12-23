@@ -148,24 +148,13 @@ process.on("SIGTERM", () => {
 
 function getWelcomeMessage(address: string) {
   return escapeMarkdown(`
-   *Welcome to ai16mc bot*
-The first AI-powered prediction market on Solana, dedicated to Manchester City in the English Premier League (EPL).
+    *Welcome to ai16mc bot*
+The first AI-powered prediction market on Solana, dedicated to *Manchester City* in the English Premier League (EPL).
   
 You currently have no SOL in your wallet. To start Predicting & Discovering, deposit SOL to your unique ai16mc address:
   
 \`${address}\` (tap to copy)
   
 Once done, tap refresh and your balance will appear here.
-
-To receive the latest updates on MC's upcoming matches, type the command /matches.  
-
-To participate in predictions for MC's matches, type the command /predicted.
-  
-For more info on your wallet and to retrieve your private key, tap the wallet button below. User funds are safe on ai16mc, but if you expose your private key we can't protect you!
-\n
-Here are the upcoming matches for Manchester City in the EPL in this week:
-1. Everton FC vs Manchester City on Thursday, Dec 26, 2024, at 4:30 AM PST - type /match1
-
-2. Manchester City vs Leicester City on Sunday, Dec 29, 2024, at 6:30 AM PST - type /match2
-   `);
+    `);
 }
