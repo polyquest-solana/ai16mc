@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "build": "esbuild index=./src --bundle --minify --outdir=dist --packages=external --platform=node",
-		"start": "node dist",
+    "start": "node dist",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",
@@ -52,6 +52,7 @@
     "@types/node": "^18.15.11",
     "esbuild": "^0.24.2",
     "nodemon": "^2.0.22",
+    "prettier": "^3.4.2",
     "ts-node": "^10.9.1",
     "tsx": "^4.19.2",
     "typescript": "^5.0.4"

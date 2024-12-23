@@ -1,0 +1,1 @@
+ALTER TABLE "market_predictions" ALTER COLUMN "correct_answer_id" DROP NOT NULL;

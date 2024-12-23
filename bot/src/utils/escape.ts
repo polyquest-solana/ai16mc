@@ -1,28 +1,28 @@
 const SPECIAL_CHARS = [
-  "\\",
-  "_",
-  "*",
-  "[",
-  "]",
-  "(",
-  ")",
-  "~",
-  "`",
-  ">",
-  "#",
-  "+",
-  "-",
-  "=",
-  "|",
-  "{",
-  "}",
-  ".",
-  "!",
-  "#",
-];
+  '\\',
+  '_',
+  //   "*",
+  '[',
+  ']',
+  '(',
+  ')',
+  '~',
+  // '`',
+  '>',
+  '<',
+  '&',
+  '#',
+  '+',
+  '-',
+  '=',
+  '|',
+  '{',
+  '}',
+  '.',
+  '!',
+]
 
-const regex = new RegExp(`[${SPECIAL_CHARS.join("\\")}]`, "ig");
-
-export function escapeMarkdown(text: string) {
-  return text.replace(regex, "\\$&");
+export const escapeMarkdown = (text: string) => {
+  SPECIAL_CHARS.forEach((char) => (text = text.replaceAll(char, `\\${char}`)))
+  return text
 }

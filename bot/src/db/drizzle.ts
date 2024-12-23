@@ -48,9 +48,17 @@ export const getActiveMarket = () =>
     },
   });
 
-export const getUserBets = async (userId: string, marketId: string) => {
+export const getMarketByKey = (marketKey: string) =>
+  db.query.markets.findFirst({
+    where: eq(schema.markets.marketKey, marketKey),
+    with: {
+      options: true,
+    },
+  });
+
+export const getUserBets = async (userId: string, marketKey: string) => {
   const market = await db.query.markets.findFirst({
-    where: eq(schema.markets.id, marketId),
+    where: eq(schema.markets.marketKey, marketKey),
     with: {
       options: true,
     },
@@ -67,4 +75,27 @@ export const getUserBets = async (userId: string, marketId: string) => {
       option: true,
     },
   });
+};
+
+export const updateUserBets = async (userId: string, marketKey: string) => {
+  const market = await db.query.markets.findFirst({
+    where: eq(schema.markets.marketKey, marketKey),
+    with: {
+      options: true,
+    },
+  });
+
+  return await db
+    .update(schema.bets)
+    .set({ claimed: true })
+    .where(
+      and(
+        eq(schema.bets.userId, userId),
+        or(
+          ...market!.options.map((option) =>
+            eq(schema.bets.optionId, option.id)
+          )
+        )
+      )
+    );
 };

@@ -9,7 +9,13 @@ import {
   PREMIER_LEAGUE_SEASON,
 } from "../common/constants";
 import { MarketService } from "./market";
-import { createUser, db, getActiveMarket, getUserBets } from "../db/drizzle";
+import {
+  createUser,
+  db,
+  getActiveMarket,
+  getMarketByKey,
+  getUserBets,
+} from "../db/drizzle";
 import { bets, marketOptions, markets } from "../db/schema";
 import { calculateWinPercentage } from "../utils/utils";
 import { eq } from "drizzle-orm";
@@ -124,8 +130,7 @@ export const createPredictionTool = tool(
           title: title,
           description: description,
           marketKey: marketKey.toString(),
-          // @ts-ignore
-          creatorId: user.id,
+          creatorId: user!.id,
           date: new Date(date),
         })
         .returning();
@@ -133,28 +138,48 @@ export const createPredictionTool = tool(
       await tx.insert(marketOptions).values([
         {
           marketId: newMarket.id,
-          name: `Manchester City Win - ${percents.winPercentage}%`,
+          name: `Manchester City Win - ${percents.winPercentage.toFixed(2)}%`,
           answerKey: answerKeys[0].toNumber(),
           odd: String(percents.winPercentage),
         },
         {
           marketId: newMarket.id,
-          name: `Draw - ${percents.drawPercentage}%`,
+          name: `Draw - ${percents.drawPercentage.toFixed(2)}%`,
           answerKey: answerKeys[1].toNumber(),
           odd: String(percents.drawPercentage),
         },
         {
           marketId: newMarket.id,
-          name: `${opponent} Win - ${percents.opponentWinPercentage}%`,
+          name: `${opponent} Win - ${percents.opponentWinPercentage.toFixed(2)}%`,
           answerKey: answerKeys[2].toNumber(),
           odd: String(percents.opponentWinPercentage),
         },
       ]);
     });
 
-    return [
+    [
       `Respond with the details of the prediction market, including the title: ${title}, description: ${description}, time: ${date}, and odds. Include the signature hash: ${signature} at the bottom.
         `,
+      [],
+    ];
+
+    return [
+      `Respond following message:
+      The prediction market was successfully created.
+
+      Prediction market:
+    - Title: ${title}
+    - Description: ${description}
+    - Date: ${date}
+
+    Prediction Options:
+    - ${`Manchester City Win - ${percents.winPercentage}%`}
+    - ${`Draw - ${percents.drawPercentage}%`}
+    - ${`${opponent} Win - ${percents.opponentWinPercentage}%`}
+    
+    \n\n
+      View the on-chain transaction here: \`https://solscan.io/tx/${signature}?cluster=devnet\`
+      `,
       [],
     ];
   },
@@ -175,27 +200,37 @@ export const getActiveMarketsTool = tool(
 
     const market = await getActiveMarket();
     console.log("market: ", market);
-    const bets = await getUserBets(user!.id, market!.id);
+
+    let result = "";
+
+    if (market?.status === "finished") {
+      result = `*The market has ended. Result: ${market.options.find((option) => option.id === market.correctAnswerId)?.name}*`;
+    }
+
+    const bets = await getUserBets(user!.id, String(market!.marketKey));
 
     const userBetsMessage =
       bets && bets.length > 0
         ? `Your bet for this match: ${bets
             .map(
               (bet) =>
-                `You placed a bet of ${bet.amount} USDC on ${bet.option.name}`
+                `You placed a bet of *${bet.amount} USDC* on *${bet.option.name}*`
             )
             .join("\n")}`
         : "";
 
     return `
-    Return the active prediction market using following information:
+    Respond with the exact following message and nothing else.
+
     Match info:
-    - Title: ${market?.title}
+    - Title: *${market?.title}*
     - Description: ${market?.description}
     - Date: ${market?.date}
 
     Prediction Options:
     ${market?.options.map((option) => `- ${option.name}`).join("\n")}
+
+    ${result}
 
     ${userBetsMessage}
 
@@ -263,11 +298,14 @@ export const placeBetTool = tool(
           userId: user!.id,
           optionId: option!.id,
           amount: String(betAmount),
+          claimed: false,
         })
         .returning();
 
       return [
-        `Respond success message include this signature hash: ${signature} at the bottom.
+        `Respond following message,
+        Your bet has been successfully placed.\n
+        View the on-chain transaction here: \`https://solscan.io/tx/${signature}?cluster=devnet\`
         `,
         [],
       ];
@@ -285,5 +323,116 @@ export const placeBetTool = tool(
     description: "Use this action to place a bet on a match",
     responseFormat: "content_and_artifact",
     schema: betSchema,
+  }
+);
+
+const finishMarketSchema = z.object({
+  marketKey: z.string().describe("The market key of the prediction market."),
+  answerKey: z
+    .string()
+    .describe("The answer key the admin wants to finish on."),
+});
+
+export const finishMarketTool = tool(
+  async (input) => {
+    console.log("Call finishMarket with args: ", input);
+
+    const market = new MarketService();
+
+    const { signature } = await market.finishMarket({
+      marketKey: input.marketKey,
+      answerKey: input.answerKey,
+    });
+
+    const answer = await db.query.marketOptions.findFirst({
+      where: eq(marketOptions.answerKey, Number(input.answerKey)),
+    });
+
+    await db
+      .update(markets)
+      .set({
+        status: "finished",
+        correctAnswerId: answer!.id,
+      })
+      .where(eq(markets.marketKey, input.marketKey));
+
+    return [
+      `Respond following message,
+      The prediction market for this match has concluded successfully..\n
+      View the on-chain transaction here: \`https://solscan.io/tx/${signature}?cluster=devnet\`
+      `,
+      [],
+    ];
+  },
+  {
+    name: "finishMarketTool",
+    description:
+      "Call this function when admin want to finish or end the market. ",
+    responseFormat: "content_and_artifact",
+    schema: finishMarketSchema,
+  }
+);
+
+const claimRewardSchema = z.object({
+  marketKey: z.string().describe("The market key of the prediction market."),
+});
+
+export const claimRewardTool = tool(
+  async (input, config) => {
+    console.log("Call claimRewardTool with args: ", input);
+    const { marketKey } = input;
+
+    const username = config?.configurable?.username as string;
+    const user = await createUser(username);
+
+    const market = await getMarketByKey(marketKey);
+
+    if (market?.status !== "finished") {
+      return `
+    Respond with the exact following message and nothing else.
+      This prediction market is not finished yet.
+    `;
+    }
+
+    const bets = await getUserBets(user!.id, marketKey);
+
+    if (!bets || bets.length === 0) {
+      return `
+    Respond with the exact following message and nothing else.
+      You didn't place a bet on this match
+    `;
+    }
+
+    const answerKeys = bets.map((bet) => bet.option.answerKey);
+
+    if (answerKeys.length === 0) {
+      return `
+    Respond with the exact following message and nothing else.
+      Your bet didn't win this time. Better luck next time!
+    `;
+    }
+
+    const marketService = new MarketService();
+
+    const { signature } = await marketService.claimReward({
+      voter: user!.wallet!,
+      marketKey: input.marketKey,
+      answerKeys: answerKeys,
+    });
+
+    return [
+      `Respond following message,
+      The reward has been sent to your wallet. Thank you for participating in this prediction!\n
+      View the on-chain transaction here: \`https://solscan.io/tx/${signature}?cluster=devnet\`
+      `,
+      [],
+    ];
+  },
+  {
+    name: "claimRewardSchema",
+    description:
+      "Call this function when user want to claim the reward from their betting",
+    responseFormat: "content_and_artifact",
+    schema: claimRewardSchema,
   }
 );

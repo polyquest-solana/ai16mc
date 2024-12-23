@@ -18,6 +18,8 @@ import {
   getActiveMarketsTool,
   getFixturesTool,
   placeBetTool,
+  finishMarketTool,
+  claimRewardTool,
 } from "./tools";
 import { StateGraphAddNodeOptions } from "@langchain/langgraph/dist/graph/state";
 import { ADMIN_USERNAMES } from "../common/constants";
@@ -27,9 +29,10 @@ const usersTools = [
   getOddsTool,
   getActiveMarketsTool,
   placeBetTool,
+  claimRewardTool,
 ];
 
-const adminTools = [createPredictionTool, ...usersTools];
+const adminTools = [createPredictionTool, finishMarketTool, ...usersTools];
 
 const toolNode = new ToolNode([...adminTools, ...usersTools]);
 
@@ -66,7 +69,7 @@ async function callModel(
   const messages = state.messages;
   const response = await modelWithTools.invoke([
     new SystemMessage(
-      "I want you to act as a football assistant for the Manchester City team. Your role is to provide useful information about football, especially related to Manchester City. Additionally, you can assist users by showing the team's fixtures and providing odds for their matches."
+      "I want you to act as a football assistant for the Manchester City team. Your role is to provide useful information about football, especially related to Manchester City. Additionally, you can assist users by showing the team's fixtures and providing odds for their matches. Return in markdown format, using *text* for bold text, you must using start * and end *, never use * without end *, don't use **text**, don't use many speacial characters, dont use ###."
     ),
     ...messages,
   ]);

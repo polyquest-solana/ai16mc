@@ -1,4 +1,4 @@
-import { Connection, Keypair } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { getAdminKp } from "../utils/keys";
 import idl from "../program/forecast_market.json";
 import { ForecastMarketProgram } from "../program/forecast-market-program";
@@ -88,6 +88,64 @@ export class MarketService {
       this.connection,
       this.signer.publicKey,
       [...betTx.instructions],
+      [this.signer]
+    );
+
+    return {
+      signature,
+    };
+  }
+
+  public async finishMarket(params: {
+    marketKey: string;
+    answerKey: number | string;
+  }) {
+    const program = new ForecastMarketProgram(idl as any, this.connection);
+
+    const finishMarketTx = await program.finishMarket(
+      this.signer.publicKey,
+      new BN(params.marketKey)
+    );
+
+    const successMarketTx = await program.successMarket(
+      this.signer.publicKey,
+      new BN(params.marketKey),
+      new BN(params.answerKey)
+    );
+
+    const signature = await sendTransaction(
+      this.connection,
+      this.signer.publicKey,
+      [...finishMarketTx.instructions, ...successMarketTx.instructions],
+      [this.signer]
+    );
+
+    return {
+      signature,
+    };
+  }
+
+  public async claimReward(params: {
+    voter: string;
+    marketKey: string;
+    answerKeys: (number | string)[];
+  }) {
+    const program = new ForecastMarketProgram(idl as any, this.connection);
+
+    const claimTokenTxs = await Promise.all(
+      params.answerKeys.map((answerKey) =>
+        program.claimToken(
+          new PublicKey(params.voter),
+          new BN(params.marketKey),
+          new BN(answerKey)
+        )
+      )
+    );
+
+    const signature = await sendTransaction(
+      this.connection,
+      this.signer.publicKey,
+      [...claimTokenTxs.map((tx) => tx.instructions).flat()],
       [this.signer]
     );
 

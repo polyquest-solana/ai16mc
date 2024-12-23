@@ -8,4 +8,4 @@ export const USDC_MINT = new PublicKey(
   "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
 );
 
-export const ADMIN_USERNAMES = ["khacvy"];
+export const ADMIN_USERNAMES = ["khacvy", "david_in_web3"];

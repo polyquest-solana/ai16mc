@@ -5,6 +5,8 @@ import {
   timestamp,
   integer,
   numeric,
+  pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { nanoid } from "nanoid";
 import { relations } from "drizzle-orm";
@@ -23,6 +25,13 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at"),
 });
 
+export const markerStatusEnum = pgEnum("status", [
+  "active",
+  "finished",
+  "draft",
+  "canceled",
+]);
+
 export const markets = pgTable("market_predictions", {
   id: text("id")
     .primaryKey()
@@ -34,7 +43,8 @@ export const markets = pgTable("market_predictions", {
     .references(() => users.id)
     .notNull(),
   date: timestamp("date").notNull().defaultNow(),
-
+  status: markerStatusEnum().default("active"),
+  correctAnswerId: varchar("correct_answer_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),
@@ -64,6 +74,7 @@ export const bets = pgTable("bets", {
     .notNull(),
 
   amount: numeric("amount"),
+  claimed: boolean("claimed"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
