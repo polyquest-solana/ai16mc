@@ -1,7 +1,7 @@
 # ai16mc 🤖
 
 <div align="center">
-  <img src="./assets/banner.jpg" alt="Eliza Banner" width="100%" />
+  <img src="./assets/banner.jpg" alt="ai16mc" width="100%" />
 </div>
 
 ## ✨ Features
