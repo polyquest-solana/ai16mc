@@ -1,6 +1,10 @@
-import { tool } from "@langchain/core/tools";
-import { LangGraphRunnableConfig } from "@langchain/langgraph";
+import dotenv from "dotenv";
+dotenv.config();
 
+import { tool } from "@langchain/core/tools";
+import fetch from "node-fetch";
+import { LangGraphRunnableConfig } from "@langchain/langgraph";
+import bs58 from "bs58";
 import { z } from "zod";
 import { FootballApiService } from "./footballService";
 import {
@@ -17,8 +21,22 @@ import {
   getUserBets,
 } from "../db/drizzle";
 import { bets, marketOptions, markets } from "../db/schema";
-import { calculateWinPercentage } from "../utils/utils";
+import {
+  calculateWinPercentage,
+  formatCurrency,
+  formatNumber,
+} from "../utils/utils";
 import { eq } from "drizzle-orm";
+import {
+  AddressLookupTableAccount,
+  Connection,
+  Keypair,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
+import { getMint } from "@solana/spl-token";
+import { getSolanaTokens, sendTransaction } from "../utils/connection";
+import { FungibleToken, NonFungibleToken } from "../types/helius";
 
 // tools
 const footballService = new FootballApiService();
@@ -434,5 +452,375 @@ export const claimRewardTool = tool(
       "Call this function when user want to claim the reward from their betting",
     responseFormat: "content_and_artifact",
     schema: claimRewardSchema,
+  }
+);
+
+const swapTokenSchema = z.object({
+  fromTokenMint: z
+    .string()
+    .describe("The mint address of the token to swap from"),
+  toTokenMint: z.string().describe("The mint address of the token to swap to"),
+  amount: z.number().describe("The amount of token to swap"),
+});
+
+export const swapTokenTool = tool(
+  async (arg, config) => {
+    console.log("Call swapToken with args: ", arg);
+    const username = config?.configurable?.username as string;
+    const user = await createUser(username);
+    const userKp = Keypair.fromSecretKey(bs58.decode(user!.privateKey!));
+
+    const { fromTokenMint, toTokenMint, amount } = arg;
+
+    const connection = new Connection(
+      process.env.SOLANA_MAINNET_RPC_URL!,
+      "confirmed"
+    );
+
+    const fromMintInfo = await getMint(
+      connection,
+      new PublicKey(fromTokenMint)
+    );
+
+    const quoteResponse = await fetch(
+      `https://quote-api.jup.ag/v6/quote?inputMint=${fromTokenMint}&outputMint=${toTokenMint}&amount=${
+        amount * 10 ** fromMintInfo.decimals
+      }&slippageBps=300&onlyDirectRoutes=true&maxAccounts=20`
+    );
+
+    const quote: any = await quoteResponse.json();
+
+    const response = await fetch(
+      "https://quote-api.jup.ag/v6/swap-instructions",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quoteResponse: quote,
+          userPublicKey: user?.wallet!,
+          wrapAndUnwrapSol: true,
+        }),
+      }
+    );
+
+    const {
+      swapInstruction,
+      setupInstructions,
+      cleanupInstruction,
+      addressLookupTableAddresses,
+    } = (await response.json()) as any;
+
+    const deserializeInstruction = (instruction: any) => {
+      return new TransactionInstruction({
+        programId: new PublicKey(instruction.programId),
+        keys: instruction.accounts.map((key: any) => ({
+          pubkey: new PublicKey(key.pubkey),
+          isSigner: key.isSigner,
+          isWritable: key.isWritable,
+        })),
+        data: Buffer.from(instruction.data, "base64"),
+      });
+    };
+
+    const getAddressLookupTableAccounts = async (
+      keys: string[]
+    ): Promise<AddressLookupTableAccount[]> => {
+      const addressLookupTableAccountInfos =
+        await connection.getMultipleAccountsInfo(
+          keys.map((key) => new PublicKey(key))
+        );
+
+      return addressLookupTableAccountInfos.reduce(
+        (acc, accountInfo, index) => {
+          const addressLookupTableAddress = keys[index];
+          if (accountInfo) {
+            const addressLookupTableAccount = new AddressLookupTableAccount({
+              key: new PublicKey(addressLookupTableAddress),
+              state: AddressLookupTableAccount.deserialize(accountInfo.data),
+            });
+            acc.push(addressLookupTableAccount);
+          }
+
+          return acc;
+        },
+        new Array<AddressLookupTableAccount>()
+      );
+    };
+
+    const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
+
+    addressLookupTableAccounts.push(
+      ...(await getAddressLookupTableAccounts(addressLookupTableAddresses))
+    );
+
+    try {
+      const signature = await sendTransaction(
+        connection,
+        userKp.publicKey,
+        [
+          ...setupInstructions.map(deserializeInstruction),
+          deserializeInstruction(swapInstruction),
+          deserializeInstruction(cleanupInstruction),
+        ],
+        [userKp],
+        addressLookupTableAccounts
+      );
+
+      return [`signature = ${signature}`, []];
+    } catch (error) {
+      console.error(error);
+      return ["error", []];
+    }
+  },
+  {
+    name: "swapTokenTool",
+    description: `
+    Use this function when user want swap tokens. Token can be SOL or SPL token
+    For now we only support following SPL tokens:
+    - SOL: So11111111111111111111111111111111111111112
+    - USDC: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+    - Bonk: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
+    - WIF: EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm
+    - PENGU: 2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv
+    - SEND: SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa
+    If user ask to swap other SPL token, we will show an error message.
+
+    Reponse following message, no more, no less: Token swapped successfully. View the on-chain transaction here: https://solscan.io/tx/<insert the signature here>
+    `,
+    responseFormat: "content_and_artifact",
+    schema: swapTokenSchema,
+  }
+);
+
+export const showPortfolio = tool(
+  async (arg, config) => {
+    console.log("Call showPortfolio ", process.env.SOLANA_MAINNET_RPC_URL!);
+    const username = config?.configurable?.username as string;
+
+    try {
+      const user = await createUser(username);
+
+      const response = await fetch(process.env.SOLANA_MAINNET_RPC_URL!, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "my-id",
+          method: "searchAssets",
+          params: {
+            ownerAddress: user?.wallet,
+            tokenType: "all",
+            displayOptions: {
+              showNativeBalance: true,
+              showInscription: true,
+              showCollectionMetadata: true,
+            },
+            limit: 200,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch data`);
+      }
+
+      const data: any = await response.json();
+      const items: (FungibleToken | NonFungibleToken)[] = data.result.items;
+
+      const tokenList = await getSolanaTokens();
+
+      let fungibleTokens: FungibleToken[] = items
+        .filter(
+          (item): item is FungibleToken =>
+            item.interface === "FungibleToken" ||
+            item.interface === "FungibleAsset"
+        )
+        .filter(
+          (item) =>
+            item.token_info.price_info?.total_price &&
+            item.token_info.price_info?.total_price > 0
+        );
+
+      const nonFungibleTokens: NonFungibleToken[] = items
+        .filter(
+          (item): item is NonFungibleToken =>
+            !["FungibleToken", "FungibleAsset"].includes(item.interface)
+        )
+        .sort((a, b) => {
+          const aCollection = a.grouping?.find(
+            (group) => group.group_key === "collection"
+          );
+          const bCollection = b.grouping?.find(
+            (group) => group.group_key === "collection"
+          );
+
+          if (!!aCollection && !bCollection) {
+            return -1;
+          }
+          if (!aCollection && !!bCollection) {
+            return 1;
+          }
+          return 0;
+        });
+
+      fungibleTokens = fungibleTokens
+        .map((item) => {
+          const tokenMetadata = tokenList.find(
+            (token: any) => token.address === item.id
+          );
+
+          if (tokenMetadata) {
+            return {
+              ...item,
+              content: {
+                ...item.content,
+                files: [
+                  {
+                    uri: tokenMetadata.logoURI,
+                    cdn_uri: "",
+                    mime: "image/png",
+                  },
+                ],
+                links: {
+                  image: tokenMetadata.logoURI,
+                },
+              },
+            };
+          }
+
+          return item;
+        })
+        .sort(
+          (a, b) =>
+            (b.token_info.price_info?.total_price || 0) -
+            (a.token_info.price_info?.total_price || 0)
+        );
+
+      const solBalance = data.result.nativeBalance.lamports;
+
+      // Create SOL token object
+      const solToken = {
+        interface: "FungibleAsset",
+        id: "So11111111111111111111111111111111111111112",
+        content: {
+          $schema: "https://schema.metaplex.com/nft1.0.json",
+          json_uri: "",
+          files: [
+            {
+              uri: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+              cdn_uri: "",
+              mime: "image/png",
+            },
+          ],
+          metadata: {
+            description: "Solana Token",
+            name: "Wrapped SOL",
+            symbol: "SOL",
+            token_standard: "Native Token",
+          },
+          links: {
+            image:
+              "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+          },
+        },
+        authorities: [],
+        compression: {
+          eligible: false,
+          compressed: false,
+          data_hash: "",
+          creator_hash: "",
+          asset_hash: "",
+          tree: "",
+          seq: 0,
+          leaf_id: 0,
+        },
+        grouping: [], // Assuming empty for SOL
+        royalty: {
+          royalty_model: "", // Fill as needed
+          target: null,
+          percent: 0,
+          basis_points: 0,
+          primary_sale_happened: false,
+          locked: false,
+        },
+        creators: [], // Assuming empty for SOL
+        ownership: {
+          frozen: false,
+          delegated: false,
+          delegate: null,
+          ownership_model: "token",
+          owner: nonFungibleTokens[0]?.ownership.owner,
+        },
+        supply: null, // Assuming null for SOL
+        mutable: true, // Assuming true for SOL
+        burnt: false, // Assuming false for SOL
+
+        token_info: {
+          symbol: "SOL",
+          balance: solBalance,
+          supply: 0, // Assuming null for SOL
+          decimals: 9,
+          token_program: "", // Fill as needed
+          associated_token_address: "", // Fill as needed
+          price_info: {
+            price_per_token: data.result.nativeBalance.price_per_sol, // Fill with actual price if available
+            total_price: data.result.nativeBalance.total_price, // Fill with actual total price if available
+            currency: "", // Fill as needed
+          },
+        },
+      };
+
+      if (solBalance > 0) {
+        fungibleTokens.push(solToken);
+      }
+
+      const totalValue = fungibleTokens.reduce(
+        (acc, token) => acc + (token.token_info.price_info?.total_price || 0),
+        0
+      );
+
+      return [
+        `
+        Total value: ${formatCurrency(totalValue, "USD")}
+
+        Your assets:
+
+        ${fungibleTokens
+          .map(
+            (token) => `
+          - $${token.token_info.symbol}: ${formatNumber(token.token_info.balance / 10 ** token.token_info.decimals)} (${formatCurrency(token.token_info.price_info?.total_price || 0, "USD")})
+          `
+          )
+          .join("\n")}
+
+          ${nonFungibleTokens.length > 0 ? "NFTs" : ""}
+
+          ${
+            nonFungibleTokens.length > 0 &&
+            nonFungibleTokens
+              .map(
+                (token) => `
+            - ${token.content.metadata.name}
+            `
+              )
+              .join("\n")
+          }
+
+
+        `,
+        [],
+      ];
+    } catch (error) {
+      console.error(error);
+      return ["error", []];
+    }
+  },
+  {
+    name: "getPortfolioTool",
+    description: `
+    Use this function to get the user's portfolio`,
+    responseFormat: "content_and_artifact",
   }
 );

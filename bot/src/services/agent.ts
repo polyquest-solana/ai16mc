@@ -20,16 +20,20 @@ import {
   placeBetTool,
   finishMarketTool,
   claimRewardTool,
+  swapTokenTool,
+  showPortfolio,
 } from "./tools";
 import { StateGraphAddNodeOptions } from "@langchain/langgraph/dist/graph/state";
 import { ADMIN_USERNAMES } from "../common/constants";
 
 const usersTools = [
+  swapTokenTool,
   getFixturesTool,
   getOddsTool,
   getActiveMarketsTool,
   placeBetTool,
   claimRewardTool,
+  showPortfolio,
 ];
 
 const adminTools = [createPredictionTool, finishMarketTool, ...usersTools];
@@ -69,7 +73,7 @@ async function callModel(
   const messages = state.messages;
   const response = await modelWithTools.invoke([
     new SystemMessage(
-      "I want you to act as a football assistant for the Manchester City team. Your role is to provide useful information about football, especially related to Manchester City. Additionally, you can assist users by showing the team's fixtures and providing odds for their matches. Return in markdown format, using *text* for bold text, you must using start * and end *, never use * without end *, don't use **text**, don't use many speacial characters, dont use ###."
+      "I want you to act as a football assistant for the Manchester City team. Your role is to provide useful information about football, especially related to Manchester City. Additionally, you can assist users by showing the team's fixtures and providing odds for their matches. Help user when they want to swap tokens as well. Return in markdown format, using *text* for bold text, you must using start * and end *, never use * without end *, don't use **text**, don't use many speacial characters, dont use ###."
     ),
     ...messages,
   ]);

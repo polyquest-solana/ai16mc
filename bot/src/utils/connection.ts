@@ -15,18 +15,20 @@ import {
   TransactionExpiredBlockheightExceededError,
 } from "@solana/web3.js";
 import bs58 from "bs58";
+import { Token } from "../types/helius";
 
 export async function sendTransaction(
   connection: Connection,
   payer: PublicKey,
   instructions: TransactionInstruction[],
-  signers: Signer[]
+  signers: Signer[],
+  lookupTables: AddressLookupTableAccount[] = []
 ) {
   const signature = await sendSmartTransaction(
     connection,
     instructions,
     signers,
-    [],
+    lookupTables,
     {
       feePayer: payer,
     }
@@ -114,23 +116,23 @@ async function createSmartTransaction(
   );
 
   // Get the priority fee estimate based on the serialized transaction
-  // const priorityFeeEstimateResponse = await getPriorityFeeEstimate({
-  //   connection,
-  //   transaction: serializedTransaction,
-  //   options: {
-  //     recommended: true,
-  //   },
-  // });
+  const priorityFeeEstimateResponse = await getPriorityFeeEstimate({
+    connection,
+    transaction: serializedTransaction,
+    options: {
+      recommended: true,
+    },
+  });
 
-  // const { priorityFeeEstimate } = priorityFeeEstimateResponse;
+  const { priorityFeeEstimate } = priorityFeeEstimateResponse;
 
-  // if (!priorityFeeEstimate) {
-  //   throw new Error("Priority fee estimate not available");
-  // }
+  if (!priorityFeeEstimate) {
+    throw new Error("Priority fee estimate not available");
+  }
 
   // Add the compute unit price instruction with the estimated fee
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 30000, //Math.ceil(priorityFeeEstimate),
+    microLamports: priorityFeeEstimate,
   });
 
   instructions.unshift(computeBudgetIx);
@@ -152,7 +154,7 @@ async function createSmartTransaction(
 
   // For very small transactions, such as simple transfers, default to 1k CUs
   const customersCU = units < 1000 ? 1000 : Math.ceil(units * 1.1);
-
+  console.log("customersCU", customersCU);
   const computeUnitsIx = ComputeBudgetProgram.setComputeUnitLimit({
     units: customersCU,
   });
@@ -229,7 +231,7 @@ async function getComputeUnits(
     return null;
   }
 
-  return rpcResponse.value.unitsConsumed || null;
+  return rpcResponse.value.unitsConsumed || 100;
 }
 
 export enum PriorityLevel {
@@ -396,3 +398,18 @@ async function sendSmartTransaction(
 
   throw new Error("Transaction failed to confirm within lastValidBlockHeight");
 }
+
+export const getSolanaTokens = async () => {
+  const response = await fetch(
+    "https://tokens.jup.ag/tokens?tags=verified",
+    {}
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch data`);
+  }
+
+  const tokenList = (await response.json()) as Token[];
+
+  return tokenList;
+};
