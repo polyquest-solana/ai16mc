@@ -594,7 +594,7 @@ export const swapTokenTool = tool(
 
 export const showPortfolio = tool(
   async (arg, config) => {
-    console.log("Call showPortfolio ", process.env.SOLANA_MAINNET_RPC_URL!);
+    console.log("Call showPortfolio ");
     const username = config?.configurable?.username as string;
 
     try {
