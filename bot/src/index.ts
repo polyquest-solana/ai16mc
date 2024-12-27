@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import agent from "./services/agent";
-import { Telegraf } from "telegraf";
+import { Context, Telegraf } from "telegraf";
+import { Update } from "telegraf/types";
 import { HumanMessage } from "@langchain/core/messages";
 import { createUser } from "./db/drizzle";
 import { escapeMarkdown } from "./utils/escape";
@@ -33,108 +34,28 @@ bot.help((ctx) => {
 });
 
 bot.on("message", async (ctx) => {
-  // @ts-ignore
-  // const entities = ctx.message.entities;
+  const chatType = ctx.message.chat.type;
 
-  // if (entities) {
-  //   const botMention = entities.some((entity: any) => {
-  //     return (
-  //       entity.type === "mention" &&
-  //       // @ts-ignore
-  //       ctx.message?.text?.includes(`@${bot?.botInfo?.username}`)
-  //     );
-  //   });
+  if (chatType === "private") {
+    // handle message
+    handleBotMessage(ctx);
+  } else {
+    // @ts-ignore
+    const entities = ctx.message.entities;
 
-  //   if (botMention) {
-  //     const text = (ctx.message as any).text;
+    if (entities) {
+      const botMention = entities.some((entity: any) => {
+        return (
+          entity.type === "mention" &&
+          // @ts-ignore
+          ctx.message?.text?.includes(`@${bot?.botInfo?.username}`)
+        );
+      });
 
-  //     if (!text) {
-  //       ctx.reply("Please send a text message.");
-  //       return;
-  //     }
-
-  //     console.log("Input: ", text);
-
-  //     await ctx.sendChatAction("typing");
-
-  //     try {
-
-  //       const response = await agent.invoke(
-  //         {
-  //           messages: [new HumanMessage(text)],
-  //         },
-  //         {
-  //           configurable: {
-  //             thread_id: "123",
-  //             username: ctx.message.from?.username!,
-  //           },
-  //         }
-  //       );
-
-  //       await ctx.reply(
-  //         // @ts-ignore
-  //         response.messages[response.messages.length - 1].content ?? ""
-  //       );
-  //     } catch (error) {
-  //       console.log(error);
-
-  //       const message = JSON.stringify(
-  //         (error as any)?.response?.data?.error ?? "Unable to extract error"
-  //       );
-
-  //       console.log({ message });
-
-  //       await ctx.reply(
-  //         "Whoops! There was an error while talking to OpenAI. Error: " +
-  //           message
-  //       );
-  //     }
-  //   }
-  // }
-
-  // -----------------------
-  const text = (ctx.message as any).text;
-
-  if (!text) {
-    ctx.reply("Please send a text message.");
-    return;
-  }
-
-  console.log("Input: ", text);
-
-  await ctx.sendChatAction("typing");
-
-  try {
-    const response = await agent.invoke(
-      {
-        messages: [new HumanMessage(text)],
-      },
-      {
-        configurable: {
-          thread_id: "123",
-          username: ctx.message.from?.username!,
-        },
+      if (botMention) {
+        handleBotMessage(ctx);
       }
-    );
-
-    await ctx.replyWithMarkdownV2(
-      escapeMarkdown(
-        // @ts-ignore
-        response.messages[response.messages.length - 1].content ?? ""
-      )
-    );
-  } catch (error) {
-    console.log(error);
-
-    const message = JSON.stringify(
-      (error as any)?.response?.data?.error ?? "Unable to extract error"
-    );
-
-    console.log({ message });
-
-    await ctx.reply(
-      "Whoops! There was an error while talking to OpenAI. Error: " + message
-    );
+    }
   }
 });
 
@@ -157,4 +78,45 @@ You currently have no SOL in your wallet. To start Predicting & Discovering, dep
   
 Once done, tap refresh and your balance will appear here.
     `);
+}
+
+async function handleBotMessage(ctx: Context<Update>) {
+  const text = (ctx.message as any).text;
+
+  if (!text) {
+    ctx.reply("Please send a text message.");
+    return;
+  }
+
+  console.log("Input: ", text);
+
+  await ctx.sendChatAction("typing");
+  try {
+    const response = await agent.invoke(
+      {
+        messages: [new HumanMessage(text)],
+      },
+      {
+        configurable: {
+          thread_id: "001",
+          username: ctx?.message?.from?.username!,
+        },
+      }
+    );
+    await ctx.replyWithMarkdownV2(
+      escapeMarkdown(
+        // @ts-ignore
+        response.messages[response.messages.length - 1].content ?? ""
+      )
+    );
+  } catch (error) {
+    console.log(error);
+    const message = JSON.stringify(
+      (error as any)?.response?.data?.error ?? "Unable to extract error"
+    );
+    console.log({ message });
+    await ctx.reply(
+      "Whoops! There was an error while talking to OpenAI. Error: " + message
+    );
+  }
 }

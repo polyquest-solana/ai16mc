@@ -125,64 +125,60 @@ const createPrediectionSchema = z.object({
 
 export const createPredictionTool = tool(
   async (input, config: LangGraphRunnableConfig) => {
-    console.log("Call createPredictionTool with args: ", input);
+    try {
+      console.log("Call createPredictionTool with args: ", input);
 
-    const { title, description, opponent, date, win, draw, lost } = input;
+      const { title, description, opponent, date, win, draw, lost } = input;
 
-    const username = config?.configurable?.username as string;
-    const user = await createUser(username);
+      const username = config?.configurable?.username as string;
+      const user = await createUser(username);
 
-    const percents = calculateWinPercentage(win, draw, lost);
+      const percents = calculateWinPercentage(win, draw, lost);
 
-    const market = new MarketService();
+      const market = new MarketService();
 
-    const { signature, marketKey, answerKeys } = await market.createPrediction({
-      title: title,
-      description: description,
-    });
-
-    await db.transaction(async (tx) => {
-      const [newMarket] = await tx
-        .insert(markets)
-        .values({
+      const { signature, marketKey, answerKeys } =
+        await market.createPrediction({
           title: title,
           description: description,
-          marketKey: marketKey.toString(),
-          creatorId: user!.id,
-          date: new Date(date),
-        })
-        .returning();
+        });
 
-      await tx.insert(marketOptions).values([
-        {
-          marketId: newMarket.id,
-          name: `Manchester City Win - ${percents.winPercentage.toFixed(2)}%`,
-          answerKey: answerKeys[0].toNumber(),
-          odd: String(percents.winPercentage),
-        },
-        {
-          marketId: newMarket.id,
-          name: `Draw - ${percents.drawPercentage.toFixed(2)}%`,
-          answerKey: answerKeys[1].toNumber(),
-          odd: String(percents.drawPercentage),
-        },
-        {
-          marketId: newMarket.id,
-          name: `${opponent} Win - ${percents.opponentWinPercentage.toFixed(2)}%`,
-          answerKey: answerKeys[2].toNumber(),
-          odd: String(percents.opponentWinPercentage),
-        },
-      ]);
-    });
+      await db.transaction(async (tx) => {
+        const [newMarket] = await tx
+          .insert(markets)
+          .values({
+            title: title,
+            description: description,
+            marketKey: marketKey.toString(),
+            creatorId: user!.id,
+            date: new Date(date),
+          })
+          .returning();
 
-    [
-      `Respond with the details of the prediction market, including the title: ${title}, description: ${description}, time: ${date}, and odds. Include the signature hash: ${signature} at the bottom.
-        `,
-      [],
-    ];
+        await tx.insert(marketOptions).values([
+          {
+            marketId: newMarket.id,
+            name: `Manchester City Win - ${percents.winPercentage.toFixed(2)}%`,
+            answerKey: answerKeys[0].toNumber(),
+            odd: String(percents.winPercentage),
+          },
+          {
+            marketId: newMarket.id,
+            name: `Draw - ${percents.drawPercentage.toFixed(2)}%`,
+            answerKey: answerKeys[1].toNumber(),
+            odd: String(percents.drawPercentage),
+          },
+          {
+            marketId: newMarket.id,
+            name: `${opponent} Win - ${percents.opponentWinPercentage.toFixed(2)}%`,
+            answerKey: answerKeys[2].toNumber(),
+            odd: String(percents.opponentWinPercentage),
+          },
+        ]);
+      });
 
-    return [
-      `Respond following message:
+      return [
+        `Respond following message:
       The prediction market was successfully created.
 
       Prediction market:
@@ -198,8 +194,13 @@ export const createPredictionTool = tool(
     \n\n
       View the on-chain transaction here: \`https://solscan.io/tx/${signature}?cluster=devnet\`
       `,
-      [],
-    ];
+        [],
+      ];
+    } catch (error) {
+      console.log("createPredictionTool error", error);
+
+      return ["error, technical issue. Please try again later."];
+    }
   },
   {
     name: "createPredictionTool",
@@ -594,7 +595,7 @@ export const swapTokenTool = tool(
 
 export const showPortfolio = tool(
   async (arg, config) => {
-    console.log("Call showPortfolio ", process.env.SOLANA_MAINNET_RPC_URL!);
+    console.log("Call showPortfolio ");
     const username = config?.configurable?.username as string;
 
     try {
@@ -824,3 +825,5 @@ export const showPortfolio = tool(
     responseFormat: "content_and_artifact",
   }
 );
+
+
